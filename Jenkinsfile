@@ -67,11 +67,11 @@ pipeline {
                     sh 'chmod +x ~/.cache/codacy/coverage-reporter/*/codacy-coverage-reporter'
 
                     dir('frontend') {
-                        sh '~/.cache/codacy/coverage-reporter/*/codacy-coverage-reporter report -l JavaScript -r coverage/lcov.info -t $4354e6b5e18248c493819265d09f5408'
+                        sh '~/.cache/codacy/coverage-reporter/*/codacy-coverage-reporter report -l JavaScript -r coverage/lcov.info -t $CODACY_PROJECT_TOKEN'
                     }
 
                     dir('backend') {
-                        sh '~/.cache/codacy/coverage-reporter/*/codacy-coverage-reporter report -l JavaScript -r coverage/lcov.info -t $4354e6b5e18248c493819265d09f5408'
+                        sh '~/.cache/codacy/coverage-reporter/*/codacy-coverage-reporter report -l JavaScript -r coverage/lcov.info -t $CODACY_PROJECT_TOKEN'
                     }
                 }
             }
