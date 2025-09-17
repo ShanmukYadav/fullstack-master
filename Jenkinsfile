@@ -22,7 +22,7 @@ pipeline {
         stage('Install Frontend Dependencies') {
             steps {
                 dir('frontend') {
-                    sh 'npm install --no-audit --no-fund'
+                    bat 'npm install --no-audit --no-fund'
                 }
             }
         }
@@ -30,7 +30,7 @@ pipeline {
         stage('Install Backend Dependencies') {
             steps {
                 dir('backend') {
-                    sh 'npm install --no-audit --no-fund'
+                    bat 'npm install --no-audit --no-fund'
                 }
             }
         }
@@ -38,7 +38,7 @@ pipeline {
         stage('Run Frontend Tests') {
             steps {
                 dir('frontend') {
-                    sh 'npm test -- --passWithNoTests --watchAll=false --coverage'
+                    bat 'npm test -- --passWithNoTests --watchAll=false --coverage'
                 }
             }
         }
@@ -47,8 +47,7 @@ pipeline {
             steps {
                 dir('backend') {
                     withEnv(["MONGO_URI=${env.MONGO_URI}"]) {
-                        sh 'chmod -R +x node_modules/.bin'
-                        sh 'npx cross-env NODE_ENV=test jest --detectOpenHandles --forceExit --coverage'
+                        bat 'npx cross-env NODE_ENV=test jest --detectOpenHandles --forceExit --coverage'
                     }
                 }
             }
@@ -56,8 +55,8 @@ pipeline {
 
         stage('Install Codacy Reporter') {
             steps {
-                // Use pipe instead of process substitution for compatibility
-                sh 'bash -c "curl -Ls https://coverage.codacy.com/get.sh | bash"'
+                // On Windows, use PowerShell to download and run the Codacy reporter
+                bat 'powershell -Command "Invoke-WebRequest -Uri https://coverage.codacy.com/get.sh -OutFile codacy-coverage-get.sh; bash codacy-coverage-get.sh"'
             }
         }
 
@@ -65,10 +64,10 @@ pipeline {
             steps {
                 withCredentials([string(credentialsId: 'CODACY_PROJECT_TOKEN', variable: 'CODACY_PROJECT_TOKEN')]) {
                     dir('frontend') {
-                        sh 'codacy-coverage-reporter report -l JavaScript -r coverage/lcov.info -t $CODACY_PROJECT_TOKEN'
+                        bat 'codacy-coverage-reporter report -l JavaScript -r coverage\\lcov.info -t %CODACY_PROJECT_TOKEN%'
                     }
                     dir('backend') {
-                        sh 'codacy-coverage-reporter report -l JavaScript -r coverage/lcov.info -t $CODACY_PROJECT_TOKEN'
+                        bat 'codacy-coverage-reporter report -l JavaScript -r coverage\\lcov.info -t %CODACY_PROJECT_TOKEN%'
                     }
                 }
             }
@@ -77,9 +76,7 @@ pipeline {
 
     post {
         always {
-            script {
-                echo 'Build finished.'
-            }
+            echo 'Build finished.'
         }
     }
 }
