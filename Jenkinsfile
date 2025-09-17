@@ -1,16 +1,25 @@
 pipeline {
     agent any
 
+    parameters {
+        string(name: 'BRANCH_NAME', defaultValue: 'main', description: 'Branch to build')
+    }
+
     environment {
+        CODACY_PROJECT_TOKEN = credentials('codacy-project-token')
         NODEJS_HOME = tool name: 'NodeJS', type: 'NodeJSInstallation'
         PATH = "${NODEJS_HOME}/bin:${env.PATH}"
-        CODACY_PROJECT_TOKEN = credentials('codacy-project-token')
     }
 
     stages {
+
         stage('Checkout SCM') {
             steps {
-                checkout scm
+                echo "Checking out branch: ${params.BRANCH_NAME}"
+                checkout([$class: 'GitSCM',
+                    branches: [[name: "*/${params.BRANCH_NAME}"]],
+                    userRemoteConfigs: [[url: 'https://github.com/ShanmukYadav/fullstack-master.git']]
+                ])
             }
         }
 
@@ -42,8 +51,8 @@ pipeline {
             steps {
                 dir('backend') {
                     sh '''
-                    chmod -R +x node_modules/.bin
-                    npx cross-env NODE_ENV=test jest --detectOpenHandles --forceExit --coverage
+                        chmod -R +x node_modules/.bin
+                        npx cross-env NODE_ENV=test jest --detectOpenHandles --forceExit --coverage
                     '''
                 }
             }
@@ -51,24 +60,27 @@ pipeline {
 
         stage('Upload Coverage to Codacy') {
             steps {
-                sh '''
-                # Use bash-compatible syntax
-                curl -Ls https://coverage.codacy.com/get.sh | bash
-                '''
+                dir('.') {
+                    sh '''
+                        #!/bin/bash
+                        echo "Uploading coverage to Codacy..."
+                        npx codacy-coverage --token "$CODACY_PROJECT_TOKEN"
+                    '''
+                }
             }
         }
     }
 
     post {
         always {
-            echo 'Cleaning up workspace...'
+            echo "Cleaning up workspace..."
             cleanWs()
         }
         success {
-            echo 'Pipeline completed successfully!'
+            echo "Pipeline completed successfully!"
         }
         failure {
-            echo 'Pipeline failed. Check logs.'
+            echo "Pipeline failed. Check logs!"
         }
     }
 }
