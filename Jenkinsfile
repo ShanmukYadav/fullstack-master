@@ -10,7 +10,7 @@ pipeline {
     }
 
     tools {
-        nodejs 'NodeJS' // Make sure this matches your NodeJS installation name in Jenkins
+        nodejs 'NodeJS' // Name of your NodeJS installation in Jenkins
     }
 
     stages {
@@ -61,7 +61,6 @@ pipeline {
         stage('Upload Coverage to Codacy') {
             steps {
                 dir('.') {
-                    // Use bash explicitly to avoid syntax issues
                     sh '''#!/bin/bash
                     npx codacy-coverage -r coverage/lcov.info
                     '''
@@ -72,7 +71,7 @@ pipeline {
 
     post {
         always {
-            node {
+            script {
                 echo "Cleaning up workspace..."
                 cleanWs()
             }
