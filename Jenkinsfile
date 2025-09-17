@@ -7,7 +7,7 @@ pipeline {
     }
 
     tools {
-        nodejs "NodeJS" // Make sure Jenkins NodeJS tool is configured
+        nodejs "NodeJS"
     }
 
     stages {
@@ -61,29 +61,36 @@ pipeline {
         }
 
         stage('Upload Coverage to Codacy') {
-    steps {
-        withCredentials([string(credentialsId: 'CODACY_PROJECT_TOKEN', variable: 'CODACY_PROJECT_TOKEN')]) {
-            sh 'chmod +x ~/.cache/codacy/coverage-reporter/*/codacy-coverage-reporter'
+            steps {
+                withCredentials([string(credentialsId: 'CODACY_PROJECT_TOKEN', variable: 'CODACY_PROJECT_TOKEN')]) {
+                    script {
+                        def reporterPath = sh(
+                            script: "ls -d ~/.cache/codacy/coverage-reporter/* | sort -V | tail -n 1",
+                            returnStdout: true
+                        ).trim()
 
-            dir('frontend') {
-                sh """
-                echo "Using CODACY_PROJECT_TOKEN=\$CODACY_PROJECT_TOKEN"
-                ~/.cache/codacy/coverage-reporter/*/codacy-coverage-reporter report \
-                  --language JavaScript \
-                  --report coverage/lcov.info \
-                  --project-token \$CODACY_PROJECT_TOKEN
-                """
-            }
+                        dir('frontend') {
+                            sh """
+                                echo "Uploading frontend coverage..."
+                                ${reporterPath}/codacy-coverage-reporter report \
+                                  --language JavaScript \
+                                  --report coverage/lcov.info \
+                                  --project-token ${CODACY_PROJECT_TOKEN}
+                            """
+                        }
 
-            dir('backend') {
-                sh """
-                ~/.cache/codacy/coverage-reporter/*/codacy-coverage-reporter report \
-                  --language JavaScript \
-                  --report coverage/lcov.info \
-                  --project-token \$CODACY_PROJECT_TOKEN
-                """
+                        dir('backend') {
+                            sh """
+                                echo "Uploading backend coverage..."
+                                ${reporterPath}/codacy-coverage-reporter report \
+                                  --language JavaScript \
+                                  --report coverage/lcov.info \
+                                  --project-token ${CODACY_PROJECT_TOKEN}
+                            """
+                        }
+                    }
+                }
             }
         }
     }
 }
-
