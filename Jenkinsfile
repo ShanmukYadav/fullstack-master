@@ -62,16 +62,16 @@ pipeline {
 
         stage('Upload Coverage to Codacy') {
             steps {
-                withCredentials([string(credentialsId: '4354e6b5e18248c493819265d09f5408', variable: '4354e6b5e18248c493819265d09f5408')]) {
+                withCredentials([string(credentialsId: 'CODACY_PROJECT_TOKEN', variable: 'CODACY_PROJECT_TOKEN')]) {
                     // Make sure the reporter is executable
                     sh 'chmod +x ~/.cache/codacy/coverage-reporter/*/codacy-coverage-reporter'
 
                     dir('frontend') {
-                        sh '~/.cache/codacy/coverage-reporter/*/codacy-coverage-reporter report -l JavaScript -r coverage/lcov.info -t $CODACY_PROJECT_TOKEN'
+                        sh '~/.cache/codacy/coverage-reporter/*/codacy-coverage-reporter report -l JavaScript -r coverage/lcov.info -t $4354e6b5e18248c493819265d09f5408'
                     }
 
                     dir('backend') {
-                        sh '~/.cache/codacy/coverage-reporter/*/codacy-coverage-reporter report -l JavaScript -r coverage/lcov.info -t $CODACY_PROJECT_TOKEN'
+                        sh '~/.cache/codacy/coverage-reporter/*/codacy-coverage-reporter report -l JavaScript -r coverage/lcov.info -t $4354e6b5e18248c493819265d09f5408'
                     }
                 }
             }
