@@ -14,7 +14,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 git branch: 'main',
-                    url: 'https://github.com/AnishN04/fullstack3.git',
+                    url: 'https://github.com/ShanmukYadav/fullstack-master.git',
                     credentialsId: 'github-pat-global'
             }
         }
@@ -22,7 +22,7 @@ pipeline {
         stage('Install Frontend Dependencies') {
             steps {
                 dir('frontend') {
-                    sh 'npm install --no-audit --no-fund'
+                    bat 'npm install --no-audit --no-fund'
                 }
             }
         }
@@ -30,7 +30,7 @@ pipeline {
         stage('Install Backend Dependencies') {
             steps {
                 dir('backend') {
-                    sh 'npm install --no-audit --no-fund'
+                    bat 'npm install --no-audit --no-fund'
                 }
             }
         }
@@ -38,7 +38,7 @@ pipeline {
         stage('Run Frontend Tests') {
             steps {
                 dir('frontend') {
-                    sh 'npm test -- --passWithNoTests --watchAll=false --coverage'
+                    bat 'npm test -- --passWithNoTests --watchAll=false --coverage'
                 }
             }
         }
@@ -47,9 +47,8 @@ pipeline {
             steps {
                 dir('backend') {
                     withEnv(["MONGO_URI=${env.MONGO_URI}"]) {
-                        // Make binaries executable to fix Linux EACCES errors
-                        sh 'chmod -R +x node_modules/.bin'
-                        sh 'npx cross-env NODE_ENV=test jest --detectOpenHandles --forceExit --coverage'
+                        // Windows: ensure local node_modules binaries can run
+                        bat 'npx cross-env NODE_ENV=test jest --detectOpenHandles --forceExit --coverage'
                     }
                 }
             }
@@ -57,7 +56,7 @@ pipeline {
 
         stage('Install Codacy Reporter') {
             steps {
-                sh 'bash <(curl -Ls https://coverage.codacy.com/get.sh)'
+                bat 'powershell -Command "Invoke-Expression (Invoke-WebRequest https://coverage.codacy.com/get.sh -UseBasicParsing).Content"'
             }
         }
 
@@ -65,10 +64,10 @@ pipeline {
             steps {
                 withCredentials([string(credentialsId: 'CODACY_PROJECT_TOKEN', variable: 'CODACY_PROJECT_TOKEN')]) {
                     dir('frontend') {
-                        sh 'codacy-coverage-reporter report -l JavaScript -r coverage/lcov.info'
+                        bat 'codacy-coverage-reporter report -l JavaScript -r coverage\\lcov.info'
                     }
                     dir('backend') {
-                        sh 'codacy-coverage-reporter report -l JavaScript -r coverage/lcov.info'
+                        bat 'codacy-coverage-reporter report -l JavaScript -r coverage\\lcov.info'
                     }
                 }
             }
