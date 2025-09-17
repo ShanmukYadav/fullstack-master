@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     tools {
-        nodejs "NodeJS"
+        nodejs "NodeJS" // Make sure your Jenkins NodeJS tool is named exactly "NodeJS"
     }
 
     stages {
@@ -32,7 +32,8 @@ pipeline {
         stage('Run Frontend Tests') {
             steps {
                 dir('frontend') {
-                    bat 'npm test || echo "No frontend tests found"'
+                    // Run frontend tests; fail build if tests fail
+                    bat 'npm test -- --passWithNoTests'
                 }
             }
         }
@@ -40,6 +41,7 @@ pipeline {
         stage('Run Backend Tests') {
             steps {
                 dir('backend') {
+                    // Run backend tests normally; failures will fail the build
                     bat 'npm test'
                 }
             }

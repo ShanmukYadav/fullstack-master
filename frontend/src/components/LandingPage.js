@@ -2,15 +2,16 @@ import React, { useContext } from 'react';
 import { Container, Row, Col, Button, Card } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import { FaSearch, FaClipboardList, FaBell, FaHandshake } from 'react-icons/fa';
-import { AuthContext } from '../context/AuthContext'; // ✅ Add this
+import { AuthContext } from '../context/AuthContext';
+import './LandingPage.css'; // ✅ Import CSS file
 
 const LandingPage = () => {
-  const { isAuthenticated } = useContext(AuthContext); // ✅ Get auth status
+  const { isAuthenticated } = useContext(AuthContext);
 
   return (
     <div className="landing-page">
       {/* Hero Section */}
-      <div className="hero-section py-5 bg-primary text-white">
+      <div className="hero-section py-5 text-white">
         <Container>
           <Row className="align-items-center">
             <Col md={6}>
@@ -24,8 +25,6 @@ const LandingPage = () => {
                 <Link to="/items">
                   <Button variant="light" size="lg">Browse Items</Button>
                 </Link>
-
-                {/* ✅ Conditionally show Sign Up if not logged in */}
                 {!isAuthenticated && (
                   <Link to="/register">
                     <Button variant="outline-light" size="lg">Sign Up</Button>
@@ -55,9 +54,7 @@ const LandingPage = () => {
         <Row>
           <Col md={3} className="mb-4">
             <Card className="h-100 text-center p-3">
-              <div className="text-primary mb-3">
-                <FaSearch size={50} />
-              </div>
+              <div className="text-primary mb-3"><FaSearch size={50} /></div>
               <Card.Body>
                 <Card.Title>Search</Card.Title>
                 <Card.Text>
@@ -68,9 +65,7 @@ const LandingPage = () => {
           </Col>
           <Col md={3} className="mb-4">
             <Card className="h-100 text-center p-3">
-              <div className="text-primary mb-3">
-                <FaClipboardList size={50} />
-              </div>
+              <div className="text-primary mb-3"><FaClipboardList size={50} /></div>
               <Card.Body>
                 <Card.Title>Claim</Card.Title>
                 <Card.Text>
@@ -81,9 +76,7 @@ const LandingPage = () => {
           </Col>
           <Col md={3} className="mb-4">
             <Card className="h-100 text-center p-3">
-              <div className="text-primary mb-3">
-                <FaBell size={50} />
-              </div>
+              <div className="text-primary mb-3"><FaBell size={50} /></div>
               <Card.Body>
                 <Card.Title>Get Notified</Card.Title>
                 <Card.Text>
@@ -94,9 +87,7 @@ const LandingPage = () => {
           </Col>
           <Col md={3} className="mb-4">
             <Card className="h-100 text-center p-3">
-              <div className="text-primary mb-3">
-                <FaHandshake size={50} />
-              </div>
+              <div className="text-primary mb-3"><FaHandshake size={50} /></div>
               <Card.Body>
                 <Card.Title>Reconnect</Card.Title>
                 <Card.Text>
@@ -134,7 +125,6 @@ const LandingPage = () => {
         <h2 className="mb-4">Ready to find what you've lost?</h2>
         <p className="lead mb-4">Join our community today and increase your chances of recovering your belongings.</p>
         <div className="d-flex justify-content-center gap-3">
-          {/* ✅ Hide CTA Sign Up if authenticated */}
           {!isAuthenticated && (
             <Link to="/register">
               <Button variant="primary" size="lg">Sign Up Now</Button>
@@ -145,23 +135,6 @@ const LandingPage = () => {
           </Link>
         </div>
       </Container>
-
-      {/* Custom CSS for the landing page */}
-      <style jsx>{`
-        .landing-page .hero-section {
-          background: linear-gradient(135deg, #4a6bff 0%, #2541b2 100%);
-        }
-        
-        .landing-page .card {
-          transition: transform 0.3s ease, box-shadow 0.3s ease;
-          border-radius: 10px;
-        }
-        
-        .landing-page .card:hover {
-          transform: translateY(-10px);
-          box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-        }
-      `}</style>
     </div>
   );
 };

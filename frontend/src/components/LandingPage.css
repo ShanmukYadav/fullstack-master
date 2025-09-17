@@ -1,0 +1,13 @@
+.landing-page .hero-section {
+  background: linear-gradient(135deg, #4a6bff 0%, #2541b2 100%);
+}
+
+.landing-page .card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border-radius: 10px;
+}
+
+.landing-page .card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
