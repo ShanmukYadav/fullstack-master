@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         CI = 'true'
-        MONGO_URI = 'mongodb://localhost:27017/fullstack_test' // MongoDB connection for backend tests
+        MONGO_URI = 'mongodb+srv://anishningala2018_db_user:Anish0204@lostandfound.1sduv0o.mongodb.net/?retryWrites=true&w=majority&appName=lostandfound' // MongoDB connection for backend tests
     }
 
     tools {
