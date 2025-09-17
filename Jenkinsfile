@@ -7,7 +7,7 @@ pipeline {
     }
 
     tools {
-        nodejs "NodeJS" // Make sure your Jenkins NodeJS tool is named exactly "NodeJS"
+        nodejs "NodeJS" // Jenkins NodeJS tool name
     }
 
     stages {
@@ -22,7 +22,7 @@ pipeline {
         stage('Install Frontend Dependencies') {
             steps {
                 dir('frontend') {
-                    bat 'npm install --no-audit --no-fund'
+                    sh 'npm install --no-audit --no-fund'
                 }
             }
         }
@@ -30,7 +30,7 @@ pipeline {
         stage('Install Backend Dependencies') {
             steps {
                 dir('backend') {
-                    bat 'npm install --no-audit --no-fund'
+                    sh 'npm install --no-audit --no-fund'
                 }
             }
         }
@@ -38,7 +38,7 @@ pipeline {
         stage('Run Frontend Tests') {
             steps {
                 dir('frontend') {
-                    bat 'npm test -- --passWithNoTests --watchAll=false --coverage'
+                    sh 'npm test -- --passWithNoTests --watchAll=false --coverage'
                 }
             }
         }
@@ -47,7 +47,8 @@ pipeline {
             steps {
                 dir('backend') {
                     withEnv(["MONGO_URI=${env.MONGO_URI}"]) {
-                        bat 'npx cross-env NODE_ENV=test jest --detectOpenHandles --forceExit --coverage'
+                        sh 'chmod -R +x node_modules/.bin'
+                        sh 'npx cross-env NODE_ENV=test jest --detectOpenHandles --forceExit --coverage'
                     }
                 }
             }
@@ -55,8 +56,8 @@ pipeline {
 
         stage('Install Codacy Reporter') {
             steps {
-                // On Windows, use PowerShell to download and run the Codacy reporter
-                bat 'powershell -Command "Invoke-WebRequest -Uri https://coverage.codacy.com/get.sh -OutFile codacy-coverage-get.sh; bash codacy-coverage-get.sh"'
+                // Linux-compatible installation
+                sh 'curl -Ls https://coverage.codacy.com/get.sh | bash'
             }
         }
 
@@ -64,10 +65,10 @@ pipeline {
             steps {
                 withCredentials([string(credentialsId: 'CODACY_PROJECT_TOKEN', variable: 'CODACY_PROJECT_TOKEN')]) {
                     dir('frontend') {
-                        bat 'codacy-coverage-reporter report -l JavaScript -r coverage\\lcov.info -t %CODACY_PROJECT_TOKEN%'
+                        sh 'codacy-coverage-reporter report -l JavaScript -r coverage/lcov.info -t $CODACY_PROJECT_TOKEN'
                     }
                     dir('backend') {
-                        bat 'codacy-coverage-reporter report -l JavaScript -r coverage\\lcov.info -t %CODACY_PROJECT_TOKEN%'
+                        sh 'codacy-coverage-reporter report -l JavaScript -r coverage/lcov.info -t $CODACY_PROJECT_TOKEN'
                     }
                 }
             }
