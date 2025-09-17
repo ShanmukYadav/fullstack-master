@@ -7,7 +7,7 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "seed:admin": "node src/seeds/adminSeed.js",
-    "test": "jest --detectOpenHandles --forceExit"
+    "test": "cross-env NODE_ENV=test jest --detectOpenHandles --forceExit"
   },
   "keywords": [
     "lost",
@@ -30,8 +30,15 @@
     "nodemailer": "^6.9.5"
   },
   "devDependencies": {
+    "cross-env": "^10.0.0",
     "jest": "^30.1.3",
+    "mongodb-memory-server": "^10.2.1",
     "nodemon": "^3.0.1",
     "supertest": "^7.1.4"
+  },
+  "jest": {
+    "testMatch": [
+      "**/tests/**/*.test.js"
+    ]
   }
 }
