@@ -7,7 +7,7 @@ pipeline {
     }
 
     tools {
-        nodejs "NodeJS" // Make sure your Jenkins NodeJS tool is named exactly "NodeJS"
+        nodejs "NodeJS" // Make sure Jenkins NodeJS tool is configured
     }
 
     stages {
@@ -56,14 +56,13 @@ pipeline {
 
         stage('Install Codacy Reporter') {
             steps {
-                sh 'bash -c "curl -Ls https://coverage.codacy.com/get.sh | bash"'
+                sh 'curl -Ls https://coverage.codacy.com/get.sh | bash'
             }
         }
 
         stage('Upload Coverage to Codacy') {
             steps {
                 withCredentials([string(credentialsId: 'CODACY_PROJECT_TOKEN', variable: 'CODACY_PROJECT_TOKEN')]) {
-                    // Make sure the reporter is executable
                     sh 'chmod +x ~/.cache/codacy/coverage-reporter/*/codacy-coverage-reporter'
 
                     dir('frontend') {
@@ -80,9 +79,7 @@ pipeline {
 
     post {
         always {
-            script {
-                echo 'Build finished.'
-            }
+            echo 'Build finished.'
         }
     }
 }
