@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         CODACY_PROJECT_TOKEN = credentials('codacy-project-token')
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials') // ✅ Corrected ID
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials') // Updated credentials
         DOCKERHUB_USERNAME = "${DOCKERHUB_CREDENTIALS_USR}"
         DOCKERHUB_PASSWORD = "${DOCKERHUB_CREDENTIALS_PSW}"
     }
@@ -13,7 +13,7 @@ pipeline {
     }
 
     tools {
-        nodejs 'NodeJS' // Name of your NodeJS installation in Jenkins
+        nodejs 'NodeJS'
     }
 
     stages {
@@ -91,7 +91,7 @@ pipeline {
                         def frontendImage = "${DOCKERHUB_USERNAME}/frontend:${imageTag}"
                         sh "docker build -t ${frontendImage} ."
                         sh "docker push ${frontendImage}"
-                        echo "✅ Frontend image pushed: ${frontendImage}"
+                        echo "Frontend image pushed: ${frontendImage}"
                     }
 
                     // Build, tag, and push backend
@@ -99,7 +99,7 @@ pipeline {
                         def backendImage = "${DOCKERHUB_USERNAME}/backend:${imageTag}"
                         sh "docker build -t ${backendImage} ."
                         sh "docker push ${backendImage}"
-                        echo "✅ Backend image pushed: ${backendImage}"
+                        echo "Backend image pushed: ${backendImage}"
                     }
                 }
             }
@@ -109,15 +109,15 @@ pipeline {
     post {
         always {
             script {
-                echo "🧹 Cleaning up workspace..."
+                echo "Cleaning up workspace..."
                 cleanWs()
             }
         }
         success {
-            echo "🎉 Pipeline completed successfully!"
+            echo "Pipeline completed successfully!"
         }
         failure {
-            echo "❌ Pipeline failed. Check logs!"
+            echo "Pipeline failed. Check logs!"
         }
     }
 }
