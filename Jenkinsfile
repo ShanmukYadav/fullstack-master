@@ -58,11 +58,22 @@ pipeline {
             }
         }
 
+        stage('Fix Coverage Paths (Windows)') {
+            steps {
+                dir('frontend') {
+                    // Convert Windows backslashes to forward slashes for Codacy
+                    sh "sed -i 's|\\\\|/|g' coverage/lcov.info"
+                }
+            }
+        }
+
         stage('Upload Coverage to Codacy') {
             steps {
                 dir('.') {
-                    sh '''#!/bin/bash
-                    npx codacy-coverage -r coverage/lcov.info
+                    sh '''
+                    bash <(curl -Ls https://coverage.codacy.com/get.sh) \
+                        report -r frontend/coverage/lcov.info \
+                        -t $CODACY_PROJECT_TOKEN
                     '''
                 }
             }
