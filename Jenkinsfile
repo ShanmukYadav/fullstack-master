@@ -22,7 +22,7 @@ pipeline {
         stage('Install Frontend Dependencies') {
             steps {
                 dir('frontend') {
-                    bat 'npm install --no-audit --no-fund'
+                    sh 'npm install --no-audit --no-fund'
                 }
             }
         }
@@ -30,7 +30,7 @@ pipeline {
         stage('Install Backend Dependencies') {
             steps {
                 dir('backend') {
-                    bat 'npm install --no-audit --no-fund'
+                    sh 'npm install --no-audit --no-fund'
                 }
             }
         }
@@ -38,7 +38,7 @@ pipeline {
         stage('Run Frontend Tests') {
             steps {
                 dir('frontend') {
-                    bat 'npm test -- --passWithNoTests --watchAll=false --coverage'
+                    sh 'npm test -- --passWithNoTests --watchAll=false --coverage'
                 }
             }
         }
@@ -47,7 +47,8 @@ pipeline {
             steps {
                 dir('backend') {
                     withEnv(["MONGO_URI=${env.MONGO_URI}"]) {
-                        bat 'npx cross-env NODE_ENV=test jest --detectOpenHandles --forceExit --coverage'
+                        sh 'chmod -R +x node_modules/.bin'
+                        sh 'npx cross-env NODE_ENV=test jest --detectOpenHandles --forceExit --coverage'
                     }
                 }
             }
@@ -55,17 +56,7 @@ pipeline {
 
         stage('Install Codacy Reporter') {
             steps {
-                bat 'curl -Ls https://coverage.codacy.com/get.sh | bash'
-            }
-        }
-
-        stage('Check Codacy Token') {
-            steps {
-                withCredentials([string(credentialsId: 'CODACY_PROJECT_TOKEN', variable: 'CODACY_PROJECT_TOKEN')]) {
-                    bat '''
-                        echo Codacy token is available: %CODACY_PROJECT_TOKEN:~0,4%****
-                    '''
-                }
+                sh 'curl -Ls https://coverage.codacy.com/get.sh | bash'
             }
         }
 
@@ -73,28 +64,28 @@ pipeline {
             steps {
                 withCredentials([string(credentialsId: 'CODACY_PROJECT_TOKEN', variable: 'CODACY_PROJECT_TOKEN')]) {
                     script {
-                        def reporterPath = bat(
-                            script: 'for /f "delims=" %i in (\'dir /b /ad %USERPROFILE%\\.cache\\codacy\\coverage-reporter\\ ^| sort\') do set LAST=%i & setx REPORTER_PATH %USERPROFILE%\\.cache\\codacy\\coverage-reporter\\%i',
+                        def reporterPath = sh(
+                            script: "ls -d ~/.cache/codacy/coverage-reporter/* | sort -V | tail -n 1",
                             returnStdout: true
                         ).trim()
 
                         dir('frontend') {
-                            bat """
-                                echo Uploading frontend coverage...
-                                %USERPROFILE%\\.cache\\codacy\\coverage-reporter\\*\\codacy-coverage-reporter.exe report ^
-                                  --language JavaScript ^
-                                  --report coverage\\lcov.info ^
-                                  --project-token %CODACY_PROJECT_TOKEN%
+                            sh """
+                                echo "Uploading frontend coverage..."
+                                ${reporterPath}/codacy-coverage-reporter report \
+                                  --language JavaScript \
+                                  --report coverage/lcov.info \
+                                  --project-token ${CODACY_PROJECT_TOKEN}
                             """
                         }
 
                         dir('backend') {
-                            bat """
-                                echo Uploading backend coverage...
-                                %USERPROFILE%\\.cache\\codacy\\coverage-reporter\\*\\codacy-coverage-reporter.exe report ^
-                                  --language JavaScript ^
-                                  --report coverage\\lcov.info ^
-                                  --project-token %CODACY_PROJECT_TOKEN%
+                            sh """
+                                echo "Uploading backend coverage..."
+                                ${reporterPath}/codacy-coverage-reporter report \
+                                  --language JavaScript \
+                                  --report coverage/lcov.info \
+                                  --project-token ${CODACY_PROJECT_TOKEN}
                             """
                         }
                     }
