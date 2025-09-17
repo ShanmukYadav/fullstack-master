@@ -1,23 +1,25 @@
 pipeline {
     agent any
 
-    parameters {
-        string(name: 'BRANCH_NAME', defaultValue: 'main', description: 'Branch to build')
-    }
-
     environment {
         CODACY_PROJECT_TOKEN = credentials('codacy-project-token')
-        NODEJS_HOME = tool name: 'NodeJS', type: 'NodeJSInstallation'
-        PATH = "${NODEJS_HOME}/bin:${env.PATH}"
+    }
+
+    parameters {
+        string(name: 'BRANCH', defaultValue: 'main', description: 'Git branch to build')
+    }
+
+    tools {
+        nodejs 'NodeJS' // Make sure this matches your NodeJS installation name in Jenkins
     }
 
     stages {
-
         stage('Checkout SCM') {
             steps {
-                echo "Checking out branch: ${params.BRANCH_NAME}"
                 checkout([$class: 'GitSCM',
-                    branches: [[name: "*/${params.BRANCH_NAME}"]],
+                    branches: [[name: "*/${params.BRANCH}"]],
+                    doGenerateSubmoduleConfigurations: false,
+                    extensions: [],
                     userRemoteConfigs: [[url: 'https://github.com/ShanmukYadav/fullstack-master.git']]
                 ])
             }
@@ -50,10 +52,8 @@ pipeline {
         stage('Run Backend Tests') {
             steps {
                 dir('backend') {
-                    sh '''
-                        chmod -R +x node_modules/.bin
-                        npx cross-env NODE_ENV=test jest --detectOpenHandles --forceExit --coverage
-                    '''
+                    sh 'chmod -R +x node_modules/.bin'
+                    sh 'npx cross-env NODE_ENV=test jest --detectOpenHandles --forceExit --coverage'
                 }
             }
         }
@@ -61,10 +61,9 @@ pipeline {
         stage('Upload Coverage to Codacy') {
             steps {
                 dir('.') {
-                    sh '''
-                        #!/bin/bash
-                        echo "Uploading coverage to Codacy..."
-                        npx codacy-coverage --token "$CODACY_PROJECT_TOKEN"
+                    // Use bash explicitly to avoid syntax issues
+                    sh '''#!/bin/bash
+                    npx codacy-coverage -r coverage/lcov.info
                     '''
                 }
             }
@@ -73,8 +72,10 @@ pipeline {
 
     post {
         always {
-            echo "Cleaning up workspace..."
-            cleanWs()
+            node {
+                echo "Cleaning up workspace..."
+                cleanWs()
+            }
         }
         success {
             echo "Pipeline completed successfully!"
