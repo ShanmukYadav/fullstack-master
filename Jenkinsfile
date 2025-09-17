@@ -2,15 +2,15 @@ pipeline {
     agent any
 
     environment {
-        NODEJS_HOME = tool name: 'NodeJS'   // Set your NodeJS tool name in Jenkins
+        NODEJS_HOME = tool name: 'NodeJS', type: 'NodeJSInstallation'
         PATH = "${NODEJS_HOME}/bin:${env.PATH}"
-        CODACY_PROJECT_TOKEN = credentials('codacy-project-token') // Your Codacy token
+        CODACY_PROJECT_TOKEN = credentials('codacy-project-token')
     }
 
     stages {
-        stage('Checkout') {
+        stage('Checkout SCM') {
             steps {
-                git branch: 'main', url: 'https://github.com/ShanmukYadav/fullstack-master.git'
+                checkout scm
             }
         }
 
@@ -41,16 +41,20 @@ pipeline {
         stage('Run Backend Tests') {
             steps {
                 dir('backend') {
-                    sh 'chmod -R +x node_modules/.bin'
-                    sh 'npx cross-env NODE_ENV=test jest --detectOpenHandles --forceExit --coverage'
+                    sh '''
+                    chmod -R +x node_modules/.bin
+                    npx cross-env NODE_ENV=test jest --detectOpenHandles --forceExit --coverage
+                    '''
                 }
             }
         }
 
         stage('Upload Coverage to Codacy') {
             steps {
-                // This will download and run Codacy reporter
-                sh 'bash <(curl -Ls https://coverage.codacy.com/get.sh)'
+                sh '''
+                # Use bash-compatible syntax
+                curl -Ls https://coverage.codacy.com/get.sh | bash
+                '''
             }
         }
     }
