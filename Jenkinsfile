@@ -15,14 +15,16 @@ pipeline {
         stage('Checkout') {
             steps {
                 git branch: 'main',
-                    url: 'https://github.com/ShanmukYadav/fullstack-master.git'
+                    url: 'https://github.com/ShanmukYadav/fullstack.git',
+                    credentialsId: 'github-pat-global' // Use your GitHub PAT
             }
         }
 
         stage('Install Frontend Dependencies') {
             steps {
                 dir('frontend') {
-                    bat 'npm install --no-audit --no-fund'
+                    // Linux shell command
+                    sh 'npm install --no-audit --no-fund'
                 }
             }
         }
@@ -30,7 +32,7 @@ pipeline {
         stage('Install Backend Dependencies') {
             steps {
                 dir('backend') {
-                    bat 'npm install --no-audit --no-fund'
+                    sh 'npm install --no-audit --no-fund'
                 }
             }
         }
@@ -38,7 +40,7 @@ pipeline {
         stage('Run Frontend Tests') {
             steps {
                 dir('frontend') {
-                    bat 'npm test -- --passWithNoTests --watchAll=false'
+                    sh 'npm test -- --passWithNoTests --watchAll=false'
                 }
             }
         }
@@ -46,9 +48,9 @@ pipeline {
         stage('Run Backend Tests') {
             steps {
                 dir('backend') {
-                    // Pass MongoDB URI to backend tests safely using Jenkins withEnv
+                    // Pass MongoDB URI to backend tests safely using withEnv
                     withEnv(["MONGO_URI=${env.MONGO_URI}"]) {
-                        bat 'npm test'
+                        sh 'npm test'
                     }
                 }
             }
