@@ -1,19 +1,20 @@
-FROM node:14
+# Use Node 20 (or 18+) as base image
+FROM node:20
 
+# Set working directory
 WORKDIR /usr/src/app
 
-# Copy package.json and install dependencies
+# Copy package.json and package-lock.json
 COPY package*.json ./
+
+# Install dependencies
 RUN npm install
 
-# Copy source code
+# Copy the rest of your app
 COPY . .
 
-# Copy .env into the image
-COPY .env .env
+# Expose port (adjust if needed)
+EXPOSE 3000
 
-# Expose backend port
-EXPOSE 5003
-
-# Start app
-CMD ["node", "server.js"]
+# Start the app
+CMD ["npm", "start"]
