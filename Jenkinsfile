@@ -3,9 +3,6 @@ pipeline {
 
     environment {
         CODACY_PROJECT_TOKEN = credentials('codacy-project-token')
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials') // Jenkins credential ID
-        DOCKERHUB_USERNAME = "${DOCKERHUB_CREDENTIALS_USR}"           // your Docker Hub username
-        DOCKERHUB_PASSWORD = "${DOCKERHUB_CREDENTIALS_PSW}"           // your Docker Hub PAT
     }
 
     parameters {
@@ -83,23 +80,26 @@ pipeline {
                 script {
                     def imageTag = "${params.BRANCH}-${env.BUILD_NUMBER ?: 'local'}"
 
-                    // Login to Docker Hub using stored credentials
-                    sh "echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USERNAME --password-stdin"
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKERHUB_USERNAME', passwordVariable: 'DOCKERHUB_PASSWORD')]) {
+                        
+                        // Login to Docker Hub
+                        sh "echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USERNAME --password-stdin"
 
-                    // Build, tag, and push frontend image
-                    dir('frontend') {
-                        def frontendImage = "${DOCKERHUB_USERNAME}/frontend:${imageTag}"
-                        sh "docker build -t ${frontendImage} ."
-                        sh "docker push ${frontendImage}"
-                        echo "Frontend image pushed: ${frontendImage}"
-                    }
+                        // Build & push frontend image
+                        dir('frontend') {
+                            def frontendImage = "adhvyth/devops-pipeline:frontend-${imageTag}"
+                            sh "docker build -t ${frontendImage} ."
+                            sh "docker push ${frontendImage}"
+                            echo "Frontend image pushed: ${frontendImage}"
+                        }
 
-                    // Build, tag, and push backend image
-                    dir('backend') {
-                        def backendImage = "${DOCKERHUB_USERNAME}/backend:${imageTag}"
-                        sh "docker build -t ${backendImage} ."
-                        sh "docker push ${backendImage}"
-                        echo "Backend image pushed: ${backendImage}"
+                        // Build & push backend image
+                        dir('backend') {
+                            def backendImage = "adhvyth/devops-pipeline:backend-${imageTag}"
+                            sh "docker build -t ${backendImage} ."
+                            sh "docker push ${backendImage}"
+                            echo "Backend image pushed: ${backendImage}"
+                        }
                     }
                 }
             }
