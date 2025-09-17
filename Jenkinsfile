@@ -2,20 +2,15 @@ pipeline {
     agent any
 
     environment {
-        CI = 'true'
-        MONGO_URI = 'mongodb+srv://anishningala2018_db_user:Anish0204@lostandfound.1sduv0o.mongodb.net/?retryWrites=true&w=majority&appName=lostandfound'
-    }
-
-    tools {
-        nodejs "NodeJS"
+        NODEJS_HOME = tool name: 'NodeJS'   // Set your NodeJS tool name in Jenkins
+        PATH = "${NODEJS_HOME}/bin:${env.PATH}"
+        CODACY_PROJECT_TOKEN = credentials('codacy-project-token') // Your Codacy token
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'test',
-                    url: 'https://github.com/ShanmukYadav/fullstack-master.git',
-                    credentialsId: 'github-pat-global'
+                git branch: 'test', url: 'https://github.com/ShanmukYadav/fullstack-master.git'
             }
         }
 
@@ -46,51 +41,30 @@ pipeline {
         stage('Run Backend Tests') {
             steps {
                 dir('backend') {
-                    withEnv(["MONGO_URI=${env.MONGO_URI}"]) {
-                        sh 'chmod -R +x node_modules/.bin'
-                        sh 'npx cross-env NODE_ENV=test jest --detectOpenHandles --forceExit --coverage'
-                    }
+                    sh 'chmod -R +x node_modules/.bin'
+                    sh 'npx cross-env NODE_ENV=test jest --detectOpenHandles --forceExit --coverage'
                 }
-            }
-        }
-
-        stage('Install Codacy Reporter') {
-            steps {
-                sh 'curl -Ls https://coverage.codacy.com/get.sh | bash'
             }
         }
 
         stage('Upload Coverage to Codacy') {
             steps {
-                withCredentials([string(credentialsId: 'CODACY_PROJECT_TOKEN', variable: 'CODACY_PROJECT_TOKEN')]) {
-                    script {
-                        def reporterPath = sh(
-                            script: "ls -d ~/.cache/codacy/coverage-reporter/* | sort -V | tail -n 1",
-                            returnStdout: true
-                        ).trim()
-
-                        dir('frontend') {
-                            sh """
-                                echo "Uploading frontend coverage..."
-                                ${reporterPath}/codacy-coverage-reporter report \
-                                  --language JavaScript \
-                                  --report coverage/lcov.info \
-                                  --project-token ${CODACY_PROJECT_TOKEN}
-                            """
-                        }
-
-                        dir('backend') {
-                            sh """
-                                echo "Uploading backend coverage..."
-                                ${reporterPath}/codacy-coverage-reporter report \
-                                  --language JavaScript \
-                                  --report coverage/lcov.info \
-                                  --project-token ${CODACY_PROJECT_TOKEN}
-                            """
-                        }
-                    }
-                }
+                // This will download and run Codacy reporter
+                sh 'bash <(curl -Ls https://coverage.codacy.com/get.sh)'
             }
+        }
+    }
+
+    post {
+        always {
+            echo 'Cleaning up workspace...'
+            cleanWs()
+        }
+        success {
+            echo 'Pipeline completed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed. Check logs.'
         }
     }
 }
