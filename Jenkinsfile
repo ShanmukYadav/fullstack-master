@@ -44,7 +44,7 @@ pipeline {
         stage('Run Frontend Tests') {
             steps {
                 dir('frontend') {
-                    sh 'npm test -- --passWithNoTests --watchAll=false --coverage'
+                    sh 'npx jest --passWithNoTests --watchAll=false --coverage'
                 }
             }
         }
@@ -58,22 +58,21 @@ pipeline {
             }
         }
 
-        stage('Fix Coverage Paths (Windows)') {
-            steps {
-                dir('frontend') {
-                    // Convert Windows backslashes to forward slashes for Codacy
-                    sh "sed -i 's|\\\\|/|g' coverage/lcov.info"
-                }
-            }
-        }
-
         stage('Upload Coverage to Codacy') {
             steps {
                 dir('.') {
                     sh '''
-                    bash <(curl -Ls https://coverage.codacy.com/get.sh) \
-                        report -r frontend/coverage/lcov.info \
-                        -t $CODACY_PROJECT_TOKEN
+                    # Download Codacy coverage reporter
+                    curl -Ls https://coverage.codacy.com/get.sh -o get.sh
+                    chmod +x get.sh
+                    
+                    # Upload frontend coverage
+                    ./get.sh report -r frontend/coverage/lcov.info -t $CODACY_PROJECT_TOKEN
+                    
+                    # Upload backend coverage (if exists)
+                    if [ -f backend/coverage/lcov.info ]; then
+                        ./get.sh report -r backend/coverage/lcov.info -t $CODACY_PROJECT_TOKEN
+                    fi
                     '''
                 }
             }
