@@ -24,6 +24,7 @@ pipeline {
                 ])
             }
         }
+        
 
         stage('Install Frontend Dependencies') {
             steps {
