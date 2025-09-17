@@ -56,42 +56,22 @@ pipeline {
 
         stage('Install Codacy Reporter') {
             steps {
-                // Install reporter (Linux compatible)
-                sh 'curl -Ls https://coverage.codacy.com/get.sh | bash'
+                sh 'bash -c "curl -Ls https://coverage.codacy.com/get.sh | bash"'
             }
         }
 
         stage('Upload Coverage to Codacy') {
             steps {
-                // Use Jenkins credentials for Codacy token
                 withCredentials([string(credentialsId: '4354e6b5e18248c493819265d09f5408', variable: '4354e6b5e18248c493819265d09f5408')]) {
-                    
-                    // Upload frontend coverage
+                    // Make sure the reporter is executable
+                    sh 'chmod +x ~/.cache/codacy/coverage-reporter/*/codacy-coverage-reporter'
+
                     dir('frontend') {
-                        sh '''
-                        if [ -f coverage/lcov.info ]; then
-                            ~/.cache/codacy/coverage-reporter/codacy-coverage-reporter report \
-                                -l JavaScript \
-                                -r coverage/lcov.info \
-                                -t $CODACY_PROJECT_TOKEN
-                        else
-                            echo "No frontend coverage found."
-                        fi
-                        '''
+                        sh '~/.cache/codacy/coverage-reporter/*/codacy-coverage-reporter report -l JavaScript -r coverage/lcov.info -t $CODACY_PROJECT_TOKEN'
                     }
 
-                    // Upload backend coverage
                     dir('backend') {
-                        sh '''
-                        if [ -f coverage/lcov.info ]; then
-                            ~/.cache/codacy/coverage-reporter/codacy-coverage-reporter report \
-                                -l JavaScript \
-                                -r coverage/lcov.info \
-                                -t $CODACY_PROJECT_TOKEN
-                        else
-                            echo "No backend coverage found."
-                        fi
-                        '''
+                        sh '~/.cache/codacy/coverage-reporter/*/codacy-coverage-reporter report -l JavaScript -r coverage/lcov.info -t $CODACY_PROJECT_TOKEN'
                     }
                 }
             }
