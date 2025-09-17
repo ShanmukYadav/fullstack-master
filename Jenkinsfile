@@ -14,7 +14,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main',
+                git branch: 'test',
                     url: 'https://github.com/ShanmukYadav/fullstack.git',
                     credentialsId: 'github-pat-global' // Use your GitHub PAT
             }
