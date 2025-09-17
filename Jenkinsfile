@@ -2,12 +2,15 @@ pipeline {
     agent any
 
     environment {
-        CODACY_PROJECT_TOKEN = credentials('codacy-project-token')   // Codacy token stored in Jenkins
-        GITHUB_PAT = credentials('github-pat-global')               // GitHub PAT stored in Jenkins
+        CI = 'true'
+        MONGO_URI = 'mongodb+srv://anishningala2018_db_user:Anish0204@lostandfound.1sduv0o.mongodb.net/?retryWrites=true&w=majority&appName=lostandfound'
+    }
+
+    tools {
+        nodejs "NodeJS"
     }
 
     stages {
-        // --------------------
         stage('Checkout') {
             steps {
                 git branch: 'test',
@@ -16,11 +19,10 @@ pipeline {
             }
         }
 
-        // --------------------
         stage('Install Frontend Dependencies') {
             steps {
                 dir('frontend') {
-                    sh 'npm install'
+                    sh 'npm install --no-audit --no-fund'
                 }
             }
         }
@@ -28,16 +30,15 @@ pipeline {
         stage('Install Backend Dependencies') {
             steps {
                 dir('backend') {
-                    sh 'npm install'
+                    sh 'npm install --no-audit --no-fund'
                 }
             }
         }
 
-        // --------------------
         stage('Run Frontend Tests') {
             steps {
                 dir('frontend') {
-                    sh 'npm test -- --coverage'
+                    sh 'npm test -- --passWithNoTests --watchAll=false --coverage'
                 }
             }
         }
@@ -45,54 +46,51 @@ pipeline {
         stage('Run Backend Tests') {
             steps {
                 dir('backend') {
-                    sh 'npm test -- --coverage'
+                    withEnv(["MONGO_URI=${env.MONGO_URI}"]) {
+                        sh 'chmod -R +x node_modules/.bin'
+                        sh 'npx cross-env NODE_ENV=test jest --detectOpenHandles --forceExit --coverage'
+                    }
                 }
             }
         }
 
-        // --------------------
         stage('Install Codacy Reporter') {
             steps {
-                sh 'bash <(curl -Ls https://coverage.codacy.com/get.sh)'
-            }
-        }
-
-        stage('Check Codacy Token') {
-            steps {
-                sh '''
-                    if [ -z "$CODACY_PROJECT_TOKEN" ]; then
-                        echo "❌ Codacy token missing"
-                        exit 1
-                    else
-                        echo "✅ Codacy token available"
-                    fi
-                '''
+                sh 'curl -Ls https://coverage.codacy.com/get.sh | bash'
             }
         }
 
         stage('Upload Coverage to Codacy') {
             steps {
-                sh '''
-                    # Upload frontend coverage
-                    if [ -f frontend/coverage/lcov.info ]; then
-                        ./codacy-coverage-reporter report -l JavaScript -r frontend/coverage/lcov.info
-                    fi
+                withCredentials([string(credentialsId: 'CODACY_PROJECT_TOKEN', variable: 'CODACY_PROJECT_TOKEN')]) {
+                    script {
+                        def reporterPath = sh(
+                            script: "ls -d ~/.cache/codacy/coverage-reporter/* | sort -V | tail -n 1",
+                            returnStdout: true
+                        ).trim()
 
-                    # Upload backend coverage
-                    if [ -f backend/coverage/lcov.info ]; then
-                        ./codacy-coverage-reporter report -l JavaScript -r backend/coverage/lcov.info
-                    fi
-                '''
+                        dir('frontend') {
+                            sh """
+                                echo "Uploading frontend coverage..."
+                                ${reporterPath}/codacy-coverage-reporter report \
+                                  --language JavaScript \
+                                  --report coverage/lcov.info \
+                                  --project-token ${CODACY_PROJECT_TOKEN}
+                            """
+                        }
+
+                        dir('backend') {
+                            sh """
+                                echo "Uploading backend coverage..."
+                                ${reporterPath}/codacy-coverage-reporter report \
+                                  --language JavaScript \
+                                  --report coverage/lcov.info \
+                                  --project-token ${CODACY_PROJECT_TOKEN}
+                            """
+                        }
+                    }
+                }
             }
-        }
-    }
-
-    post {
-        always {
-            echo '✅ Pipeline finished!'
-        }
-        failure {
-            echo '❌ Pipeline failed. Check logs above for details.'
         }
     }
 }
