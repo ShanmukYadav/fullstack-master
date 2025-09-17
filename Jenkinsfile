@@ -61,25 +61,28 @@ pipeline {
         }
 
         stage('Upload Coverage to Codacy') {
-            steps {
-                withCredentials([string(credentialsId: 'CODACY_PROJECT_TOKEN', variable: 'CODACY_PROJECT_TOKEN')]) {
-                    sh 'chmod +x ~/.cache/codacy/coverage-reporter/*/codacy-coverage-reporter'
+    steps {
+        withCredentials([string(credentialsId: 'CODACY_PROJECT_TOKEN', variable: 'CODACY_PROJECT_TOKEN')]) {
+            sh 'chmod +x ~/.cache/codacy/coverage-reporter/*/codacy-coverage-reporter'
 
-                    dir('frontend') {
-                        sh '~/.cache/codacy/coverage-reporter/*/codacy-coverage-reporter report -l JavaScript -r coverage/lcov.info -t $CODACY_PROJECT_TOKEN'
-                    }
-
-                    dir('backend') {
-                        sh '~/.cache/codacy/coverage-reporter/*/codacy-coverage-reporter report -l JavaScript -r coverage/lcov.info -t $CODACY_PROJECT_TOKEN'
-                    }
-                }
+            dir('frontend') {
+                sh """
+                echo "Using CODACY_PROJECT_TOKEN=\$CODACY_PROJECT_TOKEN"
+                ~/.cache/codacy/coverage-reporter/*/codacy-coverage-reporter report \
+                  --language JavaScript \
+                  --report coverage/lcov.info \
+                  --project-token \$CODACY_PROJECT_TOKEN
+                """
             }
-        }
-    }
 
-    post {
-        always {
-            echo 'Build finished.'
+            dir('backend') {
+                sh """
+                ~/.cache/codacy/coverage-reporter/*/codacy-coverage-reporter report \
+                  --language JavaScript \
+                  --report coverage/lcov.info \
+                  --project-token \$CODACY_PROJECT_TOKEN
+                """
+            }
         }
     }
 }
