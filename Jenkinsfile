@@ -45,16 +45,18 @@ pipeline {
         }
 
         stage('Run Backend Tests') {
-            steps {
-                dir('backend') {
-                    withEnv(["MONGO_URI=${env.MONGO_URI}"]) {
-                        // Make cross-env executable on Linux before running tests
-                        sh 'chmod +x node_modules/.bin/cross-env'
-                        sh 'npx cross-env NODE_ENV=test jest --detectOpenHandles --forceExit'
-                    }
-                }
+           steps {
+             dir('backend') {
+                withEnv(["MONGO_URI=${env.MONGO_URI}"]) {
+                // Make all node_modules/.bin executables runnable
+                sh 'chmod -R +x node_modules/.bin'
+                
+                // Run backend tests
+                sh 'npx cross-env NODE_ENV=test jest --detectOpenHandles --forceExit'
             }
         }
+    }
+}
     }
 
     post {
