@@ -16,7 +16,7 @@ pipeline {
             steps {
                 git branch: 'test',
                     url: 'https://github.com/ShanmukYadav/fullstack-master.git',
-                    credentialsId: 'github-pat-global' // Use your GitHub PAT
+                    credentialsId: 'github-pat-global'
             }
         }
 
@@ -48,7 +48,8 @@ pipeline {
             steps {
                 dir('backend') {
                     withEnv(["MONGO_URI=${env.MONGO_URI}"]) {
-                        // Use npx to run cross-env on Linux
+                        // Make cross-env executable on Linux before running tests
+                        sh 'chmod +x node_modules/.bin/cross-env'
                         sh 'npx cross-env NODE_ENV=test jest --detectOpenHandles --forceExit'
                     }
                 }
