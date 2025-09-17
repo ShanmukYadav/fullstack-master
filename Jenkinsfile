@@ -1,6 +1,11 @@
 pipeline {
     agent any
 
+    environment {
+        // Force Jest/React-Scripts to run in CI mode (no watch)
+        CI = 'true'
+    }
+
     tools {
         nodejs "NodeJS" // Make sure your Jenkins NodeJS tool is named exactly "NodeJS"
     }
@@ -9,7 +14,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 git branch: 'test',
-                    url: 'https://github.com/ShanmukYadav/fullstack.git'
+                    url: 'https://github.com/ShanmukYadav/fullstack-master.git'
             }
         }
 
@@ -32,8 +37,8 @@ pipeline {
         stage('Run Frontend Tests') {
             steps {
                 dir('frontend') {
-                    // Run frontend tests; fail build if tests fail
-                    bat 'npm test -- --passWithNoTests'
+                    // Run frontend tests once and exit
+                    bat 'npm test -- --passWithNoTests --watchAll=false'
                 }
             }
         }
