@@ -24,6 +24,7 @@ pipeline {
                 ])
             }
         }
+        
 
         stage('Install Frontend Dependencies') {
             steps {
@@ -74,6 +75,28 @@ pipeline {
                         ./get.sh report -r backend/coverage/lcov.info -t $CODACY_PROJECT_TOKEN
                     fi
                     '''
+                }
+            }
+        }
+
+        // Added stage to build Docker images for frontend and backend
+        stage('Build Docker Images') {
+            steps {
+                script {
+                    // tag images with branch and build number (or 'local' if not available)
+                    def imageTag = "${params.BRANCH}-${env.BUILD_NUMBER ?: 'local'}"
+
+                    dir('frontend') {
+                        echo "Building frontend Docker image with tag: frontend:${imageTag}"
+                        sh "docker build -t frontend:${imageTag} ."
+                    }
+
+                    dir('backend') {
+                        echo "Building backend Docker image with tag: backend:${imageTag}"
+                        sh "docker build -t backend:${imageTag} ."
+                    }
+
+                    echo "Docker images built: frontend:${imageTag}, backend:${imageTag}"
                 }
             }
         }
