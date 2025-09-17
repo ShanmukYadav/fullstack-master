@@ -23,7 +23,6 @@ pipeline {
         stage('Install Frontend Dependencies') {
             steps {
                 dir('frontend') {
-                    // Linux shell command
                     sh 'npm install --no-audit --no-fund'
                 }
             }
@@ -48,9 +47,9 @@ pipeline {
         stage('Run Backend Tests') {
             steps {
                 dir('backend') {
-                    // Pass MongoDB URI to backend tests safely using withEnv
                     withEnv(["MONGO_URI=${env.MONGO_URI}"]) {
-                        sh 'npm test'
+                        // Use npx to run cross-env on Linux
+                        sh 'npx cross-env NODE_ENV=test jest --detectOpenHandles --forceExit'
                     }
                 }
             }
