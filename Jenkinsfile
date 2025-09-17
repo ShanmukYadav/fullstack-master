@@ -3,6 +3,9 @@ pipeline {
 
     environment {
         CODACY_PROJECT_TOKEN = credentials('codacy-project-token')
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials') // ✅ Corrected ID
+        DOCKERHUB_USERNAME = "${DOCKERHUB_CREDENTIALS_USR}"
+        DOCKERHUB_PASSWORD = "${DOCKERHUB_CREDENTIALS_PSW}"
     }
 
     parameters {
@@ -24,7 +27,6 @@ pipeline {
                 ])
             }
         }
-        
 
         stage('Install Frontend Dependencies') {
             steps {
@@ -63,14 +65,11 @@ pipeline {
             steps {
                 dir('.') {
                     sh '''
-                    # Download Codacy coverage reporter
                     curl -Ls https://coverage.codacy.com/get.sh -o get.sh
                     chmod +x get.sh
-                    
-                    # Upload frontend coverage
+
                     ./get.sh report -r frontend/coverage/lcov.info -t $CODACY_PROJECT_TOKEN
-                    
-                    # Upload backend coverage (if exists)
+
                     if [ -f backend/coverage/lcov.info ]; then
                         ./get.sh report -r backend/coverage/lcov.info -t $CODACY_PROJECT_TOKEN
                     fi
@@ -79,24 +78,29 @@ pipeline {
             }
         }
 
-        // Added stage to build Docker images for frontend and backend
-        stage('Build Docker Images') {
+        stage('Build & Push Docker Images') {
             steps {
                 script {
-                    // tag images with branch and build number (or 'local' if not available)
                     def imageTag = "${params.BRANCH}-${env.BUILD_NUMBER ?: 'local'}"
 
+                    // Login to Docker Hub
+                    sh "echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USERNAME --password-stdin"
+
+                    // Build, tag, and push frontend
                     dir('frontend') {
-                        echo "Building frontend Docker image with tag: frontend:${imageTag}"
-                        sh "docker build -t frontend:${imageTag} ."
+                        def frontendImage = "${DOCKERHUB_USERNAME}/frontend:${imageTag}"
+                        sh "docker build -t ${frontendImage} ."
+                        sh "docker push ${frontendImage}"
+                        echo "✅ Frontend image pushed: ${frontendImage}"
                     }
 
+                    // Build, tag, and push backend
                     dir('backend') {
-                        echo "Building backend Docker image with tag: backend:${imageTag}"
-                        sh "docker build -t backend:${imageTag} ."
+                        def backendImage = "${DOCKERHUB_USERNAME}/backend:${imageTag}"
+                        sh "docker build -t ${backendImage} ."
+                        sh "docker push ${backendImage}"
+                        echo "✅ Backend image pushed: ${backendImage}"
                     }
-
-                    echo "Docker images built: frontend:${imageTag}, backend:${imageTag}"
                 }
             }
         }
@@ -105,15 +109,15 @@ pipeline {
     post {
         always {
             script {
-                echo "Cleaning up workspace..."
+                echo "🧹 Cleaning up workspace..."
                 cleanWs()
             }
         }
         success {
-            echo "Pipeline completed successfully!"
+            echo "🎉 Pipeline completed successfully!"
         }
         failure {
-            echo "Pipeline failed. Check logs!"
+            echo "❌ Pipeline failed. Check logs!"
         }
     }
 }
