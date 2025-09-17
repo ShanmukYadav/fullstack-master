@@ -2,69 +2,54 @@ pipeline {
     agent any
 
     environment {
-        CODACY_PROJECT_TOKEN = credentials('codacy-project-token')   // store your token in Jenkins Credentials
+        // Codacy token pulled from Jenkins credentials
+        CODACY_PROJECT_TOKEN = credentials('codacy-project-token')
+        // GitHub PAT (must also be stored in Jenkins credentials)
+        GITHUB_PAT = credentials('github-pat-global')
     }
 
     stages {
         stage('Checkout') {
             steps {
                 git branch: 'main',
-                    url: 'https://github.com/ShanmukYadav/fullstack-master.git',
-                    credentialsId: 'github-pat-global'
+                    credentialsId: 'github-pat-global',
+                    url: 'https://github.com/ShanmukYadav/fullstack-master.git'
             }
         }
 
-        stage('Install Frontend Dependencies') {
+        stage('Install Dependencies') {
             steps {
-                dir('frontend') {
-                    sh 'npm install'
-                }
+                sh 'npm install'
             }
         }
 
-        stage('Install Backend Dependencies') {
+        stage('Run Tests') {
             steps {
-                dir('backend') {
-                    sh 'npm install'
-                }
-            }
-        }
-
-        stage('Run Frontend Tests') {
-            steps {
-                dir('frontend') {
-                    sh 'npm test -- --coverage'
-                }
-            }
-        }
-
-        stage('Run Backend Tests') {
-            steps {
-                dir('backend') {
-                    sh 'npm test -- --coverage'
-                }
-            }
-        }
-
-        stage('Install Codacy Reporter') {
-            steps {
-                sh 'bash <(curl -Ls https://coverage.codacy.com/get.sh)'
-            }
-        }
-
-        stage('Check Codacy Token') {
-            steps {
-                sh 'if [ -z "$CODACY_PROJECT_TOKEN" ]; then echo "❌ Codacy token missing"; exit 1; else echo "✅ Codacy token available"; fi'
+                sh 'npm test -- --coverage'
             }
         }
 
         stage('Upload Coverage to Codacy') {
             steps {
-                sh '''
-                    ./codacy-coverage-reporter report -l JavaScript -r frontend/coverage/lcov.info
-                    ./codacy-coverage-reporter report -l JavaScript -r backend/coverage/lcov.info
-                '''
+                script {
+                    if (env.CODACY_PROJECT_TOKEN == null || env.CODACY_PROJECT_TOKEN.trim() == '') {
+                        error("❌ Codacy token not set! Please configure Jenkins credentials with ID 'codacy-project-token'.")
+                    } else {
+                        sh '''
+                          curl -Ls https://coverage.codacy.com/get.sh | bash
+                        '''
+                    }
+                }
             }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ Pipeline completed successfully and coverage uploaded to Codacy!'
+        }
+        failure {
+            echo '❌ Pipeline failed. Check logs for details.'
         }
     }
 }
