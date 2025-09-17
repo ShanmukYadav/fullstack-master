@@ -10,7 +10,7 @@ pipeline {
     }
 
     tools {
-        nodejs 'NodeJS' // Name of your NodeJS installation in Jenkins
+        nodejs 'NodeJS'
     }
 
     stages {
@@ -24,7 +24,6 @@ pipeline {
                 ])
             }
         }
-        
 
         stage('Install Frontend Dependencies') {
             steps {
@@ -63,14 +62,11 @@ pipeline {
             steps {
                 dir('.') {
                     sh '''
-                    # Download Codacy coverage reporter
                     curl -Ls https://coverage.codacy.com/get.sh -o get.sh
                     chmod +x get.sh
-                    
-                    # Upload frontend coverage
+
                     ./get.sh report -r frontend/coverage/lcov.info -t $CODACY_PROJECT_TOKEN
-                    
-                    # Upload backend coverage (if exists)
+
                     if [ -f backend/coverage/lcov.info ]; then
                         ./get.sh report -r backend/coverage/lcov.info -t $CODACY_PROJECT_TOKEN
                     fi
@@ -79,24 +75,32 @@ pipeline {
             }
         }
 
-        // Added stage to build Docker images for frontend and backend
-        stage('Build Docker Images') {
+        stage('Build & Push Docker Images') {
             steps {
                 script {
-                    // tag images with branch and build number (or 'local' if not available)
                     def imageTag = "${params.BRANCH}-${env.BUILD_NUMBER ?: 'local'}"
 
-                    dir('frontend') {
-                        echo "Building frontend Docker image with tag: frontend:${imageTag}"
-                        sh "docker build -t frontend:${imageTag} ."
-                    }
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKERHUB_USERNAME', passwordVariable: 'DOCKERHUB_PASSWORD')]) {
+                        
+                        // Login to DockerHub
+                        sh "echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USERNAME --password-stdin"
 
-                    dir('backend') {
-                        echo "Building backend Docker image with tag: backend:${imageTag}"
-                        sh "docker build -t backend:${imageTag} ."
-                    }
+                        // Build & push frontend image
+                        dir('frontend') {
+                            def frontendImage = "adhvyth/devops-pipeline:frontend-${imageTag}"
+                            sh "docker build -t ${frontendImage} ."
+                            sh "docker push ${frontendImage}"
+                            echo "Frontend image pushed: ${frontendImage}"
+                        }
 
-                    echo "Docker images built: frontend:${imageTag}, backend:${imageTag}"
+                        // Build & push backend image
+                        dir('backend') {
+                            def backendImage = "adhvyth/devops-pipeline:backend-${imageTag}"
+                            sh "docker build -t ${backendImage} ."
+                            sh "docker push ${backendImage}"
+                            echo "Backend image pushed: ${backendImage}"
+                        }
+                    }
                 }
             }
         }
