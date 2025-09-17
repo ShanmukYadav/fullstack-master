@@ -56,7 +56,8 @@ pipeline {
 
         stage('Install Codacy Reporter') {
             steps {
-                sh 'bash <(curl -Ls https://coverage.codacy.com/get.sh)'
+                // Use pipe instead of process substitution for compatibility
+                sh 'bash -c "curl -Ls https://coverage.codacy.com/get.sh | bash"'
             }
         }
 
