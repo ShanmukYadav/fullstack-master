@@ -1,3 +1,4 @@
+
 pipeline {
     agent any
 
@@ -22,7 +23,7 @@ pipeline {
         stage('Install Frontend Dependencies') {
             steps {
                 dir('frontend') {
-                    sh 'npm install --no-audit --no-fund'
+                    bat 'npm install --no-audit --no-fund'
                 }
             }
         }
@@ -30,7 +31,7 @@ pipeline {
         stage('Install Backend Dependencies') {
             steps {
                 dir('backend') {
-                    sh 'npm install --no-audit --no-fund'
+                    bat 'npm install --no-audit --no-fund'
                 }
             }
         }
@@ -38,7 +39,7 @@ pipeline {
         stage('Run Frontend Tests') {
             steps {
                 dir('frontend') {
-                    sh 'npm test -- --passWithNoTests --watchAll=false --coverage'
+                    bat 'npm test -- --passWithNoTests --watchAll=false --coverage'
                 }
             }
         }
@@ -47,8 +48,7 @@ pipeline {
             steps {
                 dir('backend') {
                     withEnv(["MONGO_URI=${env.MONGO_URI}"]) {
-                        sh 'chmod -R +x node_modules/.bin'
-                        sh 'npx cross-env NODE_ENV=test jest --detectOpenHandles --forceExit --coverage'
+                        bat 'npx cross-env NODE_ENV=test jest --detectOpenHandles --forceExit --coverage'
                     }
                 }
             }
@@ -56,7 +56,7 @@ pipeline {
 
         stage('Install Codacy Reporter') {
             steps {
-                sh 'curl -Ls https://coverage.codacy.com/get.sh | bash'
+                bat 'curl -Ls https://coverage.codacy.com/get.sh | bash'
             }
         }
 
@@ -64,28 +64,28 @@ pipeline {
             steps {
                 withCredentials([string(credentialsId: 'CODACY_PROJECT_TOKEN', variable: 'CODACY_PROJECT_TOKEN')]) {
                     script {
-                        def reporterPath = sh(
-                            script: "ls -d ~/.cache/codacy/coverage-reporter/* | sort -V | tail -n 1",
+                        def reporterPath = bat(
+                            script: "for /f %i in ('dir /b /ad /o-n %USERPROFILE%\\.cache\\codacy\\coverage-reporter') do @echo %USERPROFILE%\\.cache\\codacy\\coverage-reporter\\%i",
                             returnStdout: true
                         ).trim()
 
                         dir('frontend') {
-                            sh """
-                                echo "Uploading frontend coverage..."
-                                ${reporterPath}/codacy-coverage-reporter report \
-                                  --language JavaScript \
-                                  --report coverage/lcov.info \
-                                  --project-token ${CODACY_PROJECT_TOKEN}
+                            bat """
+                                echo Uploading frontend coverage...
+                                ${reporterPath}\\codacy-coverage-reporter.exe report ^
+                                  --language JavaScript ^
+                                  --report coverage/lcov.info ^
+                                  --project-token %CODACY_PROJECT_TOKEN%
                             """
                         }
 
                         dir('backend') {
-                            sh """
-                                echo "Uploading backend coverage..."
-                                ${reporterPath}/codacy-coverage-reporter report \
-                                  --language JavaScript \
-                                  --report coverage/lcov.info \
-                                  --project-token ${CODACY_PROJECT_TOKEN}
+                            bat """
+                                echo Uploading backend coverage...
+                                ${reporterPath}\\codacy-coverage-reporter.exe report ^
+                                  --language JavaScript ^
+                                  --report coverage/lcov.info ^
+                                  --project-token %CODACY_PROJECT_TOKEN%
                             """
                         }
                     }
