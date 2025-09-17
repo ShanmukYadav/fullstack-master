@@ -60,6 +60,16 @@ pipeline {
             }
         }
 
+        stage('Check Codacy Token') {
+            steps {
+                withCredentials([string(credentialsId: 'CODACY_PROJECT_TOKEN', variable: 'CODACY_PROJECT_TOKEN')]) {
+                    bat '''
+                        echo Codacy token is available: %CODACY_PROJECT_TOKEN:~0,4%****
+                    '''
+                }
+            }
+        }
+
         stage('Upload Coverage to Codacy') {
             steps {
                 withCredentials([string(credentialsId: 'CODACY_PROJECT_TOKEN', variable: 'CODACY_PROJECT_TOKEN')]) {
