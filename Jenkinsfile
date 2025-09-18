@@ -78,7 +78,7 @@ pipeline {
         stage('Build & Push Docker Images') {
             steps {
                 script {
-                    def imageTag = "${params.BRANCH}-${env.BUILD_NUMBER ?: 'local'}"
+                    def imageTag = "latest"  // 👈 Force latest tag for all builds
 
                     withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKERHUB_USERNAME', passwordVariable: 'DOCKERHUB_PASSWORD')]) {
                         
